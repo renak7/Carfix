@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/static/css/cadastro.css" />
+  <link rel="icon" type="image/png" href="/static/imagens/Logo(login).png" />
+  <title>Cadastro CarFix</title>
+</head>
+<body>
+  <div class="container">
+    <div class="form-box">
+      <h1>Cadastro</h1>
+
+      {% set mensagens = get_flashed_messages() %}
+      {% if mensagens %}
+        <div class="alerta">{{ mensagens[0] }}</div>
+      {% endif %}
+
+      <form action="/cadastrando" method="post">
+        <label for="email">E-Mail</label>
+        <input type="email" name="email" id="email" required placeholder="exemplo@gmail.com" />
+
+        <label for="celular">Celular</label>
+        <input type="text" name="celular" id="celular" required placeholder="(11) 91234-5678" />
+
+        <label for="nome">Nome de usuário</label>
+        <input type="text" name="nome" id="nome" required />
+
+        <label for="senha">Senha</label>
+        <input type="password" name="senha" id="senha" required />
+
+        <label for="confSenha">Confirmar senha</label>
+        <input type="password" name="confirmar_senha" id="confSenha" required />
+
+        <label for="escolha">Eu sou:</label>
+        <div class="radio-toggle-group">
+        <input type="radio" name="escolha" id="mecanico" value="mecanico" hidden />
+        <label for="mecanico" class="radio-toggle">Mecânico</label>
+
+        <input type="radio" name="escolha" id="cliente" value="cliente" hidden />
+        <label for="cliente" class="radio-toggle">Cliente</label>
+        </div>
+
+        <!-- Campo do CNPJ (inicialmente escondido) -->
+<div id="cnpjField" style="display: none;">
+  <label for="cnpj">CNPJ da Empresa</label>
+  <input type="text" name="cnpj" id="cnpj" placeholder="00.000.000/0001-00" />
+</div>
+
+<script>
+  const mecanicoRadio = document.getElementById('mecanico');
+  const clienteRadio = document.getElementById('cliente');
+  const cnpjField = document.getElementById('cnpjField');
+  const cnpjInput = document.getElementById('cnpj');
+
+  mecanicoRadio.addEventListener('change', () => {
+    if (mecanicoRadio.checked) {
+      cnpjField.style.display = 'block';
+      cnpjInput.required = true; // tornar obrigatório
+    }
+  });
+
+  clienteRadio.addEventListener('change', () => {
+    if (clienteRadio.checked) {
+      cnpjField.style.display = 'none';
+      cnpjInput.required = false; // tirar obrigatoriedade
+      cnpjInput.value = ''; // limpa o campo se estava preenchido
+    }
+  });
+</script>
+
+        <button type="submit" class="btn">Cadastrar</button>
+
+        <div class="links">
+          <a href="/">Já tenho uma conta</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- VLibras -->
+  <div vw class="enabled">
+    <div vw-access-button class="active"></div>
+    <div vw-plugin-wrapper>
+      <div class="vw-plugin-top-wrapper"></div>
+    </div>
+  </div>
+  <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+  <script>
+    new window.VLibras.Widget('https://vlibras.gov.br/app');
+  </script>
+</body>
+</html>

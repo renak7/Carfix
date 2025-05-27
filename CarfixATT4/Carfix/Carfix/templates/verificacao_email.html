@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification Form</title>
+    <link rel="icon" type="image/png" href="/static/imagens/Logo(login).png" />
+    <link rel="stylesheet" href="/static/css/verificador.css" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <script src="/static/js/verificador.js" defer></script>
+</head>
+<body>
+    <div class="main-wrapper">
+        <img src="/static/imagens/Logo.png" alt="Logo CarFix" class="logo" />
+        <div class="container">
+            <header>
+                <i class="bx bxs-check-shield"></i>
+            </header>
+            <h4>Insira o código de verificação</h4>
+            <p>Enviamos um código de verificação para o seu e-mail, se não encontrar, cheque a caixa de spam</p>
+            <form method="POST" action="/verificacao_email" id="otpForm">
+                <div class="input-field">
+                    <input type="number" name="digit1" required disabled />
+                    <input type="number" name="digit2" required disabled />
+                    <input type="number" name="digit3" required disabled />
+                    <input type="number" name="digit4" required disabled />
+                </div>
+                <input type="hidden" name="codigo" id="codigo" />
+                <button type="submit" disabled>Verificar</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

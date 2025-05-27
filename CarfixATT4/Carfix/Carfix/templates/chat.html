@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat CarFix</title>
+    <link rel="icon" type="image/png" href="/static/imagens/Logo(login).png" />
+    <link rel="stylesheet" href="/static/css/chat.css">
+</head>
+<body data-user-id="{{ session['id'] }}">
+
+
+    <div class="chat-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Conversas</h3>
+                <button id="new-chat-btn">+ Nova Conversa</button>
+
+            </div>
+            <div class="conversations" id="conversations">
+                <!-- Lista de conversas será preenchida via JavaScript -->
+            </div>
+        </div>
+        
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-header-content">
+                    <h2 id="chat-title">Chat Geral</h2>
+                    <a href="{{ url_for('home') }}" class="home-button">Home</a>
+                </div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <!-- Mensagens serão carregadas aqui -->
+            </div>
+            <div class="chat-input">
+                <form id="message-form">
+                    <input type="text" id="message-input" placeholder="Digite sua mensagem..." autocomplete="off">
+                    <button type="submit">Enviar</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="contacts-sidebar" id="contacts-sidebar">
+            <div class="contacts-header">
+                <h3>Contatos</h3>
+                <button id="close-contacts">&times;</button>
+            </div>
+            <div class="contacts-list" id="contacts-list">
+                <!-- Lista de contatos será preenchida via JavaScript -->
+            </div>
+            <div class="contacts-search">
+                <input type="text" id="contact-search" placeholder="Buscar contatos...">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

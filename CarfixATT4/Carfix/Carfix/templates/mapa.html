@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mapa com Rota e Oficinas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+            margin-top: 1rem;
+            border: 1px solid #ccc; /* Adiciona uma borda para visualização */
+        }
+        body {
+            font-family: sans-serif;
+            padding: 20px; /* Adiciona um padding para a visualização */
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        const apiKey = "5b3ce3597851110001cf6248cce09e9ecce544f68d83737035e9c42e";
+        // const stadiaApiKey = 'f36f8ff9-68e9-447d-831b-0a25112ad521'; // Não é mais necessária para OpenStreetMap
+
+        let userLat = null;
+        let userLng = null;
+        let map = L.map('map').setView([-12.9714, -38.5014], 12); // Vista inicial para Salvador, zoom 12 para ver mais área
+        let rotaAtual = null;
+        let marcadorOrigem = null;
+        let marcadorDestino = null;
+
+        // Lista de oficinas para plotar (exemplos com endereços mais completos)
+        const oficinasParaPlotar = [
+            { nome: "Oficina Retoque Total", endereco: "Rua Eurycles De Mattos, 637, Rio Vermelho, Salvador, BA, Brasil" },
+            { nome: "Renovacao Centro Automotivo", endereco: "Ladeira Da Cruz Da Redencao, 88, Brotas, Salvador, BA, Brasil" },
+            { nome: "Ancar Centro Automotivo", endereco: "Rua Missionário Otto Nelson, 32, Boca do Rio, Salvador, BA, Brasil" },
+            { nome: "Polidiesel (Retífica)", endereco: "Rua Guarajuba, 189, Pirajá, Salvador, BA, Brasil" },
+            { nome: "Service Car Mares", endereco: "Rua Barão de Cotegipe, 162, Mares, Salvador, BA, Brasil" },
+            { nome: "HC Pneus", endereco: "Avenida Centenário, 2199, Chame-Chame, Salvador, BA, Brasil" },
+            { nome: "Toniscar Centro Automotivo", endereco: "Rua Doutor Augusto Lopes Pontes, 254, Parque Bela Vista, Salvador, BA, Brasil"} // Exemplo adicional
+        ];
+
+        // Ícones personalizados
+        const iconUsuario = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/64/64113.png', // Pino de localização preto simples
+            iconSize: [32, 32], 
+            iconAnchor: [16, 32], // A ponta do pino está na parte inferior central
+            popupAnchor: [0, -32] // Popup acima da ponta do pino
+        });
+
+        const iconDestino = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/484/484167.png', 
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        const iconOficina = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png', // Pino de localização VERMELHO, estilo clássico e limpo
+            iconSize: [28, 28], // Um pouco menor que o iconUsuario
+            iconAnchor: [14, 28], // Metade da largura, altura total (para a ponta do pino)
+            popupAnchor: [0, -28]  // Popup acima da ponta
+        });
+
+        // Adiciona camada base do OpenStreetMap (mais colorida)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, // OpenStreetMap geralmente vai até zoom 19
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+
+        // Função para pegar parâmetro da URL
+        function getQueryParam(param) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(param);
+        }
+
+        // Função para geocodificar endereço para [lng, lat]
+        async function geocodificar(endereco) {
+            let textoParaGeocodificar = endereco;
+
+            // Adiciona ", Brasil" se não estiver presente, para ajudar a API.
+            if (!/brasil/i.test(textoParaGeocodificar)) {
+                 textoParaGeocodificar += ", Brasil";
+            }
+
+            let url = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(textoParaGeocodificar)}`;
+
+            // MANTIDO: Restringe a busca ao Brasil, o que é bom.
+            url += `&boundary.country=BR`;
+            // Adicionar um foco em Salvador pode ajudar a priorizar resultados na cidade para endereços ambíguos
+            url += `&focus.point.lon=-38.5014&focus.point.lat=-12.9714`;
+
+
+            console.log("Geocodificando com URL:", url); // Para depuração
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (data.features?.length > 0) {
+                    return data.features[0].geometry.coordinates; // [lng, lat]
+                }
+                console.warn("Geocodificação: Não encontrou resultados para:", textoParaGeocodificar, ". Resposta da API:", data);
+                return null;
+            } catch (e) {
+                console.error("Erro na geocodificação:", e, "para o endereço:", textoParaGeocodificar);
+                return null;
+            }
+        }
+
+        // Função para adicionar pins das oficinas
+        async function adicionarPinsOficinas() {
+            if (!map) {
+                console.error("Variável 'map' do Leaflet não está definida!");
+                return;
+            }
+            console.log("Iniciando adição de pins para oficinas...");
+
+            for (const oficina of oficinasParaPlotar) {
+                console.log(`Tentando geocodificar oficina: ${oficina.nome} - Endereço: ${oficina.endereco}`);
+                const coords = await geocodificar(oficina.endereco);
+
+                if (coords && coords.length === 2) {
+                    const lat = coords[1]; // Leaflet espera [lat, lng]
+                    const lng = coords[0];
+                    console.log(`Coordenadas encontradas para ${oficina.nome}: Latitude ${lat}, Longitude ${lng}`);
+                    L.marker([lat, lng], { icon: iconOficina })
+                        .addTo(map)
+                        .bindPopup(`<b>${oficina.nome}</b><br>${oficina.endereco}`);
+                    console.log(`Pin adicionado para: ${oficina.nome}`);
+                } else {
+                    console.warn(`Não foi possível obter coordenadas para: ${oficina.nome} (Endereço: ${oficina.endereco}).`);
+                }
+            }
+            console.log("Finalizada adição de pins para oficinas.");
+        }
+
+
+        // Função para buscar rota (destino da URL ou input)
+        async function buscarRota(enderecoDestinoParam = null) {
+            let inputDestino = enderecoDestinoParam;
+
+            if (!inputDestino) {
+                const inputElement = document.getElementById("endereco"); // Não existe no HTML atual
+                if (inputElement && inputElement.value) {
+                    inputDestino = inputElement.value;
+                } else {
+                    if (enderecoDestinoParam === null) {
+                        console.log("Nenhum endereço de destino para rota.");
+                    }
+                    return;
+                }
+            }
+
+            if (!inputDestino) {
+                 alert("Nenhum endereço de destino fornecido.");
+                 return;
+            }
+
+            if (userLat === null || userLng === null) {
+                alert("Aguardando a definição da origem (geolocalização ou clique no mapa). Tente novamente.");
+                return;
+            }
+
+            console.log("Buscando rota para destino:", inputDestino);
+            const destinoCoords = await geocodificar(inputDestino); // Usa a geocodificação mais ampla
+            if (!destinoCoords) {
+                alert("Endereço de destino para rota não encontrado.");
+                return;
+            }
+
+            desenharRota([userLng, userLat], destinoCoords, `Destino: ${inputDestino.split(',')[0]}`);
+        }
+
+        // Desenha a rota no mapa entre origem e destino
+        async function desenharRota(origem, destino, popupText) {
+            if (marcadorOrigem) {
+                marcadorOrigem.setLatLng([origem[1], origem[0]]);
+            } else if (origem[1] !== null && origem[0] !== null) {
+                 marcadorOrigem = L.marker([origem[1], origem[0]], { icon: iconUsuario, draggable: true }).addTo(map)
+                    .bindPopup("Sua Origem (arraste!)").openPopup();
+                 marcadorOrigem.on('dragend', async function(e) {
+                    const pos = e.target.getLatLng();
+                    userLat = pos.lat;
+                    userLng = pos.lng;
+                    marcadorOrigem.setLatLng([userLat, userLng]).bindPopup("Origem movida").openPopup();
+                    const enderecoParam = getQueryParam('endereco');
+                    if (marcadorDestino) {
+                        const destinoAtualCoords = marcadorDestino.getLatLng();
+                        desenharRota([userLng, userLat], [destinoAtualCoords.lng, destinoAtualCoords.lat], marcadorDestino.getPopup().getContent());
+                    } else if (enderecoParam){
+                         buscarRota(enderecoParam);
+                    }
+                 });
+            }
+
+            const url = 'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+            const body = { coordinates: [origem, destino] };
+
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Authorization': apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await resp.json();
+                if (!data.features || data.features.length === 0) {
+                    alert("Rota não encontrada.");
+                    return;
+                }
+                const coordsRota = data.features[0].geometry.coordinates;
+                const latlngs = coordsRota.map(c => [c[1], c[0]]);
+                if (rotaAtual) map.removeLayer(rotaAtual);
+                rotaAtual = L.polyline(latlngs, { color: 'blue', weight: 5 }).addTo(map);
+                if (marcadorDestino) map.removeLayer(marcadorDestino);
+                marcadorDestino = L.marker([destino[1], destino[0]], { icon: iconDestino }).addTo(map).bindPopup(popupText).openPopup();
+                
+                if (marcadorOrigem) {
+                    const group = L.featureGroup([marcadorOrigem, marcadorDestino, rotaAtual]);
+                    map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                } else {
+                    const group = L.featureGroup([marcadorDestino, rotaAtual]);
+                    map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                }
+            } catch (e) {
+                console.error("Erro ao desenhar rota:", e);
+                alert("Erro ao traçar rota.");
+            }
+        }
+
+        // Atualiza marcador do usuário
+        function atualizarUserMarker(texto) {
+            if (userLat === null || userLng === null) return;
+
+            if (!marcadorOrigem) {
+                marcadorOrigem = L.marker([userLat, userLng], { icon: iconUsuario, draggable: true }).addTo(map);
+                marcadorOrigem.bindPopup(texto).openPopup();
+                marcadorOrigem.on('dragend', async function(e) {
+                    const pos = e.target.getLatLng();
+                    userLat = pos.lat;
+                    userLng = pos.lng;
+                    marcadorOrigem.setLatLng([userLat,userLng]).bindPopup("Origem movida").openPopup();
+                    if (marcadorDestino) {
+                        const destinoAtualCoords = marcadorDestino.getLatLng();
+                        const popupContent = marcadorDestino.getPopup() ? marcadorDestino.getPopup().getContent() : "Destino";
+                        desenharRota([userLng, userLat], [destinoAtualCoords.lng, destinoAtualCoords.lat], popupContent);
+                    } else {
+                        map.setView([userLat, userLng], 14);
+                    }
+                });
+            } else {
+                marcadorOrigem.setLatLng([userLat, userLng]).bindPopup(texto).openPopup();
+            }
+            if (!marcadorDestino) {
+                 map.setView([userLat, userLng], 14);
+            } else {
+                 map.panTo([userLat, userLng]);
+            }
+        }
+
+        // Clique no mapa para alterar origem
+        map.on('click', function (e) {
+            userLat = e.latlng.lat;
+            userLng = e.latlng.lng;
+            atualizarUserMarker("Origem definida clicando no mapa");
+            if (marcadorDestino) {
+                const destinoAtualCoords = marcadorDestino.getLatLng();
+                const popupContent = marcadorDestino.getPopup() ? marcadorDestino.getPopup().getContent() : "Destino";
+                desenharRota([userLng, userLat], [destinoAtualCoords.lng, destinoAtualCoords.lat], popupContent);
+            } else {
+                const enderecoParam = getQueryParam('endereco');
+                if (enderecoParam) {
+                    buscarRota(enderecoParam);
+                }
+            }
+        });
+
+        // Inicia geolocalização e mapa
+        async function tentarUsarGeolocalizacaoEIniciar() {
+            console.log("Tentando usar geolocalização e iniciar...");
+            if (!navigator.geolocation) {
+                alert("Geolocalização não suportada. Definindo origem padrão para Salvador.");
+                userLat = -12.9714;
+                userLng = -38.5014;
+                atualizarUserMarker("Origem padrão (geolocalização falhou)");
+                await processarParametroEnderecoEPlotarOficinas();
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    userLat = pos.coords.latitude;
+                    userLng = pos.coords.longitude;
+                    console.log("Geolocalização obtida:", userLat, userLng);
+                    atualizarUserMarker("Você está aqui");
+                    await processarParametroEnderecoEPlotarOficinas();
+                },
+                async (err) => {
+                    console.warn("Sem acesso à geolocalização. Definindo origem padrão para Salvador.");
+                    userLat = -12.9714;
+                    userLng = -38.5014;
+                    atualizarUserMarker("Origem padrão (geolocalização negada/falhou)");
+                    await processarParametroEnderecoEPlotarOficinas();
+                }
+            );
+        }
+
+        // Processa endereço da URL e plota oficinas
+        async function processarParametroEnderecoEPlotarOficinas() {
+            const enderecoParam = getQueryParam('endereco');
+            if (enderecoParam) {
+                console.log("Endereço da URL encontrado:", enderecoParam);
+                await buscarRota(enderecoParam);
+            } else {
+                console.log("Nenhum endereço de destino na URL.");
+                if(userLat !== null && userLng !== null && !marcadorOrigem) {
+                    atualizarUserMarker("Sua Localização");
+                }
+            }
+            await adicionarPinsOficinas();
+        }
+
+        document.addEventListener("DOMContentLoaded", tentarUsarGeolocalizacaoEIniciar);
+    </script>
+</body>
+</html>

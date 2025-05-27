@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações</title>
+    <link rel="icon" type="image/png" href="HTML\static\imagens\Logo(login).png">
+    <link rel="stylesheet" href="/static/css/configuracoes.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="icon" type="image/png" href="/static/imagens/Logo(login).png" />
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <div class="header">
+                <ul>
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="{{ url_for('perfil') }}">Perfil</a></li>
+                    <li><a href="{{ url_for('chat') }}">Chat</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <h1>Configurações e privacidade</h1><br>
+
+    <div class="topo">
+        <ul>
+            <li><a href="#" id="btnAlterarSenha">Alterar senha</a></li> <!-- botão que abre o form -->
+            <li id="liFormSenha" style="display: none;">
+                <input type="password" id="senhaAtual" placeholder="Senha atual">
+                <input type="password" id="novaSenha" placeholder="Nova senha">
+                <input type="password" id="confirmaSenha" placeholder="Confirmar nova senha">
+                <button id="btnConfirmarSenha" class="btn-confirmar">Confirmar</button>
+            </li>
+
+
+            <li><a href="#" id="btnAlterarEmail">Alterar e-mail</a></li>
+            <li id="liFormEmail" style="display: none;">
+                <input type="email" id="novoEmail" placeholder="Novo e-mail">
+                <input type="email" id="confirmaEmail" placeholder="Confirmar e-mail">
+                <button id="btnConfirmarEmail">Confirmar</button>
+            </li>
+
+            <li><a href="">Suporte</a></li>
+            <li><a href="{{ url_for('logout') }}">Sair</a></li>
+        </ul>
+    </div>
+
+    <br>
+    <h1>Atualizações cadastrais</h1><br>
+
+    <div class="topo">
+        <ul>
+            <li><a href="#" id="btnAlterarEndereco">Mudar endereço</a></li>
+            <li id="liFormEndereco" style="display: none;">
+                <input type="text" id="novoEndereco" placeholder="Novo endereço">
+                <button id="btnConfirmarEndereco">Confirmar</button>
+            </li>
+
+            <li><a href="#" id="btnAlterarNumero">Mudar número</a></li>
+            <li id="liFormNumero" style="display: none;">
+                <input type="text" id="novoNumero" placeholder="Novo número">
+                <button id="btnConfirmarNumero">Confirmar</button>
+            </li>
+
+            <li><a href="#" id="btnAlterarUsuario">Mudar nome de usuário</a></li>
+            <li id="liFormUsuario" style="display: none;">
+                <input type="text" id="novoUsuario" placeholder="Novo nome de usuário">
+                <button id="btnConfirmarUsuario">Confirmar</button>
+            </li>
+        </ul>
+    </div>
+
+    <script src="/static/js/configuracoes.js"></script>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+		{% include 'chatbot.html' %}
+
+</body>
+</html>

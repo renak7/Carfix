@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carfix</title>
+
+    <link rel="stylesheet" href="/static/css/dashbord.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="icon" type="image/png" href="/static/imagens/Logo(login).png" />
+</head>
+<body>
+
+<div class="container">
+    <div class="hero">
+        <!-- HEADER -->
+        <div class="header">
+            <ul>
+                <li><a href="{{ url_for('perfil') }}">Perfil</a></li>
+                <li><a href="{{ url_for('configuracoes') }}">Configurações</a></li>
+                <li><a href="{{ url_for('chat') }}">Chat</a></li>
+            </ul>
+        </div>
+
+        <!-- BG -->
+        <div class="bg">
+            <div class="content">
+                <img src="/static/imagens/Logo(login).png" alt="" class="logo" />
+                <h2>Nunca foi tão facil consertar seu <span>Carro</span></h2>
+                <p>Descubra oficinas perto de você</p>
+                <div class="form">
+                    <div class="search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                        </svg>
+                        <input type="text" id="enderecoInput" placeholder="Buscar endereço e número" />
+                    </div>
+                    <button id="buscarBtn">Buscar</button>
+                </div>
+                <div class="tags">
+                    <span>#Carro</span>
+                    <span>#Mecânico</span>
+                    <span>#Peça</span>
+                    <span>#Uno</span>
+                    <span>#Palio</span>
+                    <span>#Renegade</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="banner"></div>
+
+    <div class="footer">
+        <img src="images/logofooter.svg" alt="" />
+        <span>© Copyright 2025 - Carfix <br />Todos os direitos reservados</span>
+    </div>
+</div>
+
+<!-- Script para buscar endereço e redirecionar -->
+<script>
+    document.getElementById("buscarBtn").addEventListener("click", function() {
+        const endereco = document.getElementById("enderecoInput").value;
+        if (endereco.trim() === "") {
+            alert("Digite um endereço!");
+            return;
+        }
+        // Redireciona para o mapa com o endereço na query string usando ?endereco=
+        window.location.href = `/mapa?endereco=${encodeURIComponent(endereco)}`;
+    });
+</script>
+
+{% include 'chatbot.html' %}
+
+</body>
+</html>
